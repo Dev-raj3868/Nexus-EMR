@@ -1,5 +1,11 @@
 {
   "/auth/page": "app/auth/page.js",
-  "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/medicine/page": "app/medicine/page.js",
+  "/diagnostics/page": "app/diagnostics/page.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/prescriptions/page": "app/prescriptions/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/manage-records/page": "app/manage-records/page.js",
+  "/manage-patients/page": "app/manage-patients/page.js"
 }
