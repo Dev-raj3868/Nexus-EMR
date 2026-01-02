@@ -1,5 +1,11 @@
 .env.local
+
+
+
 NEXT_PUBLIC_SUPABASE_URL=https://dbyywoajnvrjvfurjqxt.supabase.co
+
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRieXl3b2FqbnZyanZmdXJqcXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3ODA2MDIsImV4cCI6MjA3OTM1NjYwMn0.8RShAhRfVfAhQ8X2nIcd74eOM8Rj0oIGTSW3ilb3DJg
+
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+
 NEXT_SUPABASE_PROJECT_ID="dbyywoajnvrjvfurjqxt"
