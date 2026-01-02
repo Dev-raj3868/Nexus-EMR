@@ -1,3 +1,5 @@
+'use client';
+
 import { Bell, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +14,9 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface Profile {
   full_name: string;
@@ -24,34 +26,33 @@ interface Profile {
 
 export function DashboardNavbar() {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter(); // ✅ Next.js router
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      
+
       const { data } = await supabase
         .from("profiles")
         .select("full_name, clinic_name, shift")
         .eq("id", user.id)
         .single();
 
-      if (data) {
-        setProfile(data);
-      }
+      if (data) setProfile(data);
     };
 
     fetchProfile();
   }, [user]);
 
   const handleLogout = async () => {
-    await signOut();
+    await signOut(); // your hook already redirects
   };
 
   const handleProfile = () => {
-    navigate("/profile");
+    router.push("/profile"); // ✅ Next.js navigation
   };
+
   return (
     <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
@@ -59,7 +60,9 @@ export function DashboardNavbar() {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Welcome,</span>
-            <span className="font-semibold text-foreground">{profile?.full_name || "Doctor"}</span>
+            <span className="font-semibold text-foreground">
+              {profile?.full_name || "Doctor"}
+            </span>
           </div>
           <span className="text-xs text-muted-foreground">
             {profile?.clinic_name || "Loading..."} • {profile?.shift || ""}
@@ -70,10 +73,7 @@ export function DashboardNavbar() {
       <div className="flex-1 max-w-md">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search patients, records..."
-            className="pl-10 bg-background"
-          />
+          <Input placeholder="Search patients, records..." className="pl-10" />
         </div>
       </div>
 
@@ -89,7 +89,9 @@ export function DashboardNavbar() {
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="p-2">
-              <p className="text-sm text-muted-foreground">No new notifications</p>
+              <p className="text-sm text-muted-foreground">
+                No new notifications
+              </p>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -99,7 +101,7 @@ export function DashboardNavbar() {
             <Button variant="ghost" size="icon">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : "D"}
+                  {profile?.full_name?.charAt(0).toUpperCase() || "D"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -112,7 +114,10 @@ export function DashboardNavbar() {
               Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive"
+            >
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

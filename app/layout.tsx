@@ -12,12 +12,10 @@ export const metadata: Metadata = {
     title: 'Nexus - Hospital Management System',
     description: 'Comprehensive hospital management system for managing doctors, patients, prescriptions, and medical records in real-time.',
     type: 'website',
-    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@Lovable',
-    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
+    title: 'Nexus - Hospital Management System',
   },
 }
 

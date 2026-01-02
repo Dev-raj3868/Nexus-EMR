@@ -1,13 +1,20 @@
-import logoImage from "@/assets/nexus-logo.jpg";
+import Image from "next/image";
+import clsx from "clsx";
 
-const Logo = ({ className = "w-8 h-8" }: { className?: string }) => {
+interface LogoProps {
+  className?: string;
+}
+
+export default function Logo({ className }: LogoProps) {
   return (
-    <img 
-      src={logoImage} 
-      alt="Nexus Logo" 
-      className={className}
-    />
+    <div className={clsx("relative", className)}>
+      <Image
+        src="/nexus-logo.jpg"
+        alt="Nexus Logo"
+        fill
+        className="object-contain"
+        priority
+      />
+    </div>
   );
-};
-
-export default Logo;
+}

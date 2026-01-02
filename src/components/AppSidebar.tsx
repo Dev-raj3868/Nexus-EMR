@@ -1,3 +1,5 @@
+'use client';
+
 import {
   LayoutDashboard,
   FileText,
@@ -7,8 +9,8 @@ import {
   LogOut,
   Users,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import Logo from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,10 +42,15 @@ const managementItems = [
 
 export function AppSidebar() {
   const { open } = useSidebar();
-  const location = useLocation();
-  const currentPath = location.pathname;
+  const pathname = usePathname(); // ✅ Next.js replacement
+  const router = useRouter();
 
-  const isActive = (path: string) => currentPath === path;
+  const isActive = (path: string) => pathname === path;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/auth');
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -55,7 +62,9 @@ export function AppSidebar() {
               <span className="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Nexus
               </span>
-              <span className="text-xs text-muted-foreground">Hospital Management</span>
+              <span className="text-xs text-muted-foreground">
+                Hospital Management
+              </span>
             </div>
           )}
         </div>
@@ -69,10 +78,10 @@ export function AppSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url}>
+                    <Link href={item.url} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </NavLink>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -87,30 +96,24 @@ export function AppSidebar() {
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url}>
+                    <Link href={item.url} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </NavLink>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild onClick={() => {}}>
-              <button onClick={() => {
-                supabase.auth.signOut();
-                window.location.href = '/auth';
-              }}>
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </button>
+            <SidebarMenuButton onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
