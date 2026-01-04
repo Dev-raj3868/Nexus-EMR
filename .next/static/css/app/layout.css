@@ -2200,9 +2200,6 @@ video {
 .ease-linear {
   transition-timing-function: linear;
 }
-.ease-out {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-}
 @keyframes enter {
 
   from {
@@ -2249,9 +2246,6 @@ video {
 }
 .ease-linear {
   animation-timing-function: linear;
-}
-.ease-out {
-  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 

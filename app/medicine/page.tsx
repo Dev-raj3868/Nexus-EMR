@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, Check, Pill } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import axios from "axios";
 
 interface Medicine {
   id: string;
@@ -53,7 +54,7 @@ const Medicine = () => {
     instructions: "",
   });
 
-  const handleAddMedicine = () => {
+  const handleAddMedicine = async () => {
     if (!newMedicine.name) {
       toast.error("Please enter medicine name");
       return;
@@ -81,8 +82,42 @@ const Medicine = () => {
     toast.success("Medicine removed");
   };
 
-  const handleSaveMedicine = (id: string) => {
-    toast.success("Medicine saved successfully");
+  const handleSaveMedicine = async (id: string) => {
+    try {
+      console.log("Saving medicine with id:", id);
+      const medicine = medicines.find((m) => m.id === id);
+      if (!medicine) {
+        toast.error("Medicine not found");
+        return;
+      }
+      const payload = {
+        doctor_id: user.id,
+        medicine_name: medicine.name,
+        dose: medicine.dose,
+        medicine_type: medicine.type,
+        time: medicine.timing,
+        duration_unit: medicine.dUnit,
+        duration: medicine.duration,
+        frequency: medicine.frequency,
+        advice: medicine.instructions,
+        // address: newPatientData.address || null,
+      }
+      console.log("Saving Medicine with data:", payload);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/services/add_medicine_service`,
+        payload,
+        { withCredentials: true }
+      );
+      if (response.data.apiSuccess === 1) {
+        console.log("New medicine Data:", response.data);
+        toast.success("Medicine saved successfully");
+      } else {
+        toast.error("Failed to add medixine");
+      }
+    } catch (error) {
+      toast.error("An error occurred while adding the medicine");
+      console.error(error);
+    }
   };
 
   return (
