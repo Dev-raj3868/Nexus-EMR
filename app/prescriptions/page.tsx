@@ -14,11 +14,14 @@ import { toast } from "sonner";
 import { Plus, Printer, Search } from "lucide-react";
 import PrescriptionPrint from "@/components/PrescriptionPrint";
 import { useReactToPrint } from 'react-to-print';
+import axios from "axios";
+import { set } from "date-fns";
 
 interface Patient {
   id: string;
-  full_name: string;
-  phone: string;
+  patient_id?: string;
+  patient_name: string;
+  phone_number: string;
   age: number;
   gender: string;
   address?: string;
@@ -40,7 +43,7 @@ const Prescriptions = () => {
   const [searchSuggestions, setSearchSuggestions] = useState<Patient[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [newPatientData, setNewPatientData] = useState({
-    full_name: "",
+    patient_name: "",
     phone: "",
     age: "",
     gender: "",
@@ -110,22 +113,100 @@ const Prescriptions = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) return;
+    // if (!user) return;
 
-    const { error } = await supabase.from("prescriptions").insert({
-      doctor_id: user.id,
-      patient_id: formData.patient_id,
-      diagnosis: formData.diagnosis,
-      medications: formData.medicine_name,
-      instructions: formData.general_advice || null,
-    });
+    // const { error } = await supabase.from("prescriptions").insert({
+    //   doctor_id: user.id,
+    //   patient_id: formData.patient_id,
+    //   diagnosis: formData.diagnosis,
+    //   medications: formData.medicine_name,
+    //   instructions: formData.general_advice || null,
+    // });
 
-    if (error) {
-      toast.error("Failed to add prescription");
+    // if (error) {
+    //   toast.error("Failed to add prescription");
+    // } else {
+    //   toast.success("Prescription added successfully");
+    //   resetForm();
+    // }
+    const activeChronicDiseases = Object.entries(formData.chronic_diseases)
+    .filter(([_, value]) => value === true)
+    .map(([key, _]) => key);
+
+  // 2. Construct the payload based on the Mongoose Schema
+  const query = {
+    patient_id: formData.patient_id,
+    doctor_id: user.id,
+    clinic_id: "CLINIC_ID",
+    
+    patient_snapshot: {
+      name: formData.patient_name,
+      phone: formData.phone,
+      age: Number(formData.age),
+      gender: formData.gender,
+    },
+
+    case_history: formData.complaints,
+    chronic_diseases: activeChronicDiseases,
+    
+    vitals: formData.vitals_name ? [{
+      name: formData.vitals_name,
+      result: formData.vitals_result,
+      unit: "" // Add this to your formData if needed
+    }] : [],
+
+    referral: formData.referral,
+    diagnosis_history: "", // Map if you have a field for this
+    general_advice: formData.general_advice,
+    surgery_advice: formData.surgery_advice,
+
+    // Schema uses 'medicine' array
+    medicine: formData.medicine_name ? [{
+      medicine_name: formData.medicine_name,
+      medicine_type: formData.type, // Maps 'type' from formData
+      dose: formData.dose,
+      dose_unit: formData.d_unit, // Maps 'd_unit' from formData
+      advice: formData.instructions, // Maps 'instructions'
+      time: formData.timing, // Maps 'timing'
+      duration: formData.duration,
+      duration_unit: "", // Add if needed
+      dose_code: "" 
+    }] : [],
+
+    // Schema uses 'diagnosis' array for tests
+    diagnosis: formData.test_name ? [{
+      test_name: formData.test_name,
+      test_type: "", 
+      advice: formData.test_message // Maps 'test_message'
+    }] : [],
+
+    status: "active",
+    
+    follow_up: {
+      required: formData.follow_up ? true : false,
+      follow_up_date: formData.follow_up || null,
+      follow_up_time: formData.follow_up_time || null,
+      notes: "" 
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/doctors/create_patient_prescription`, 
+      query,
+      { withCredentials: true }
+    );
+
+    if (response.data.apiSuccess === 1) {
+      toast.success("Prescription created successfully!");
+      // resetForm();
     } else {
-      toast.success("Prescription added successfully");
-      resetForm();
+      toast.error(response.data.message || "Failed to add prescription");
     }
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || "An error occurred");
+    console.error(error);
+  }
   };
 
   const resetForm = () => {
@@ -168,7 +249,7 @@ const Prescriptions = () => {
       surgery_advice: "",
     });
     setNewPatientData({
-      full_name: "",
+      patient_name: "",
       phone: "",
       age: "",
       gender: "",
@@ -184,18 +265,35 @@ const Prescriptions = () => {
       return;
     }
     
-    setIsSearching(true);
-    const { data, error } = await supabase
-      .from("patients")
-      .select("id, full_name, phone, age, gender, address")
-      .eq("doctor_id", user.id)
-      .ilike("phone", `%${searchValue.trim()}%`)
-      .limit(5);
+    // setIsSearching(true);
+    // const { data, error } = await supabase
+    //   .from("patients")
+    //   .select("id, full_name, phone, age, gender, address")
+    //   .eq("doctor_id", user.id)
+    //   .ilike("phone", `%${searchValue.trim()}%`)
+    //   .limit(5);
     
-    setIsSearching(false);
+    // setIsSearching(false);
     
-    if (error) {
-      return;
+    // if (error) {
+    //   return;
+    // }
+    let data: Patient[] = [];
+    try {
+      
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/doctors/search_patients`,
+        {
+          phone_number: searchValue.trim()
+        },
+        { withCredentials: true }
+      );
+      if (response.data.apiSuccess === 1) {
+        console.log("New Patient Data:", response.data);
+        data = response.data.data as Patient[];
+      }
+    } catch (error) {
+      console.error(error);
     }
     
     setSearchSuggestions(data || []);
@@ -203,15 +301,16 @@ const Prescriptions = () => {
   };
 
   const selectPatient = (patient: Patient) => {
+    console.log("Selected Patient:", patient);
     setFormData({
       ...formData,
-      patient_id: patient.id,
-      patient_name: patient.full_name,
-      phone: patient.phone,
+      patient_id: patient.patient_id,
+      patient_name: patient.patient_name,
+      phone: patient.phone_number,
       age: patient.age,
       gender: patient.gender,
     });
-    setPhoneSearch(patient.phone);
+    setPhoneSearch(patient.phone_number);
     setShowSuggestions(false);
     toast.success("Patient selected!");
   };
@@ -219,40 +318,69 @@ const Prescriptions = () => {
   const addNewPatient = async () => {
     if (!user) return;
     
-    if (!newPatientData.full_name || !newPatientData.phone || !newPatientData.gender || !newPatientData.age) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+    // if (!newPatientData.patient_name || !newPatientData.phone || !newPatientData.gender || !newPatientData.age) {
+    //   toast.error("Please fill all required fields");
+    //   return;
+    // }
 
-    const { data, error } = await supabase
-      .from("patients")
-      .insert({
+    // const { data, error } = await supabase
+    //   .from("patients")
+    //   .insert({
+    //     doctor_id: user.id,
+    //     patient_name: newPatientData.patient_name,
+    //     phone: newPatientData.phone,
+    //     age: parseInt(newPatientData.age),
+    //     gender: newPatientData.gender,
+    //     address: newPatientData.address || null,
+    //   })
+    //   .select()
+    //   .single();
+
+    // if (error) {
+    //   toast.error("Failed to add patient");
+    //   return;
+    // }
+
+    // if (data) {
+    //   setFormData({
+    //     ...formData,
+    //     patient_id: data.id,
+    //     patient_name: data.patient_name,
+    //     phone: data.phone,
+    //     age: data.age,
+    //     gender: data.gender,
+    //   });
+    //   fetchData();
+    // }
+    try {
+      const query = {
         doctor_id: user.id,
-        full_name: newPatientData.full_name,
-        phone: newPatientData.phone,
+        patient_name: newPatientData.patient_name,
+        phone_number: newPatientData.phone,
         age: parseInt(newPatientData.age),
         gender: newPatientData.gender,
-        address: newPatientData.address || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Failed to add patient");
-      return;
-    }
-
-    if (data) {
-      setFormData({
-        ...formData,
-        patient_id: data.id,
-        patient_name: data.full_name,
-        phone: data.phone,
-        age: data.age,
-        gender: data.gender,
-      });
-      toast.success("Patient added successfully!");
-      fetchData();
+        // address: newPatientData.address || null,
+      }
+      console.log("Adding Patient with data:", query);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/doctors/create_doctor_patient`,
+        query,
+        { withCredentials: true }
+      );
+      if (response.data.apiSuccess === 1) {
+        const patientId = response.data.data.patient_id;
+        console.log("New Patient Data:", response.data, patientId);
+        setFormData({
+          ...formData,
+          patient_id: patientId
+        })
+        toast.success("Patient added successfully!");
+      } else {
+        toast.error("Failed to add patient");
+      }
+    } catch (error) {
+      toast.error("An error occurred while adding the patient");
+      console.error(error);
     }
   };
 
@@ -347,8 +475,8 @@ const Prescriptions = () => {
                               onClick={() => selectPatient(patient)}
                               className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b border-border/50 last:border-0"
                             >
-                              <div className="font-medium text-sm">{patient.full_name}</div>
-                              <div className="text-xs text-muted-foreground">{patient.phone} • {patient.age}yrs • {patient.gender}</div>
+                              <div className="font-medium text-sm">{patient.patient_name}</div>
+                              <div className="text-xs text-muted-foreground">{patient.phone_number} • {patient.age}yrs • {patient.gender}</div>
                             </button>
                           ))}
                         </div>
@@ -370,9 +498,9 @@ const Prescriptions = () => {
                           <SelectValue placeholder="Select Gender" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -410,8 +538,8 @@ const Prescriptions = () => {
                       <Label className="text-sm">Patient Name<span className="text-destructive">*</span></Label>
                       <Input
                         placeholder="Enter name"
-                        value={newPatientData.full_name}
-                        onChange={(e) => setNewPatientData({ ...newPatientData, full_name: e.target.value })}
+                        value={newPatientData.patient_name}
+                        onChange={(e) => setNewPatientData({ ...newPatientData, patient_name: e.target.value })}
                       />
                     </div>
                     <div className="space-y-1">

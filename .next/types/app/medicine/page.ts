@@ -1,4 +1,4 @@
-// File: C:\Users\ASUS\OneDrive\Desktop\New folder (7)\New folder\Nexus-EMR\app\medicine\page.tsx
+// File: G:\programming\web dev\work\Nexus-EMR\app\medicine\page.tsx
 import * as entry from '../../../../app/medicine/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

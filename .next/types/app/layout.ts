@@ -1,4 +1,4 @@
-// File: C:\Users\ASUS\OneDrive\Desktop\New folder (7)\New folder\Nexus-EMR\app\layout.tsx
+// File: G:\programming\web dev\work\Nexus-EMR\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
