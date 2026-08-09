@@ -18,19 +18,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { User, Upload, GraduationCap, Building } from "lucide-react";
+import axios from "axios";
 
 interface ProfileType {
   email: string;
-  full_name: string;
+  first_name: string;
+  second_name: string;
   clinic_name: string;
   shift: string;
-  phone: string | null;
+  phone_number: string | null;
   specialization: string | null;
   age: number | null;
   gender: string | null;
   qualification: string | null;
   experience: string | null;
-  nmc_id: string | null;
+  NMC_doctor_id: string | null;
   working_days: string[] | null;
 }
 
@@ -39,21 +41,22 @@ const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "S
 const Profile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
-    full_name: "",
+    first_name: "",
+    second_name: "",
     clinic_name: "",
     shift: "",
-    phone: "",
+    phone_number: "",
     specialization: "",
     age: "",
     gender: "",
     qualification: "",
     experience: "",
-    nmc_id: "",
+    NMC_doctor_id: "",
     working_days: [] as string[],
   });
 
@@ -62,34 +65,57 @@ const Profile = () => {
   }, [user]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    // if (!user) return;
     
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    // const { data, error } = await supabase
+    //   .from("profiles")
+    //   .select("*")
+    //   .eq("id", user.id)
+    //   .single();
 
-    if (error) {
-      toast.error("Failed to fetch profile");
-    } else {
-      setProfile(data);
-      setFormData({
-        full_name: data.full_name,
-        clinic_name: data.clinic_name,
-        shift: data.shift,
-        phone: data.phone || "",
-        specialization: data.specialization || "",
-        age: data.age?.toString() || "",
-        gender: data.gender || "",
-        qualification: data.qualification || "",
-        experience: data.experience || "",
-        nmc_id: data.nmc_id || "",
-        working_days: data.working_days || [],
-      });
+    // if (error) {
+    //   toast.error("Failed to fetch profile");
+    // } else {
+    //   setProfile(data);
+    //   setFormData({
+    //     first_name: data.first_name,
+    //     clinic_name: data.clinic_name,
+    //     shift: data.shift,
+    //     phone_number: data.phone_number || "",
+    //     specialization: data.specialization || "",
+    //     age: data.age?.toString() || "",
+    //     gender: data.gender || "",
+    //     qualification: data.qualification || "",
+    //     experience: data.experience || "",
+    //     NMC_doctor_id: data.nmc_id || "",
+    //     working_days: data.working_days || [],
+    //   });
+    // }
+    let data;
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/doctors/get-doctor-profile`, {}, {
+        withCredentials: true
+      })
+      console.log("profile response data:", response.data);
+      if(response.data.resSuccess === 1) {
+        data = {
+          ...response.data.doctorData[0],
+          ...response.data.clinicData[0],
+        }
+        console.log("Fetched profile data:", data);
+        setProfile(data);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Invalid Doctor ID");
+      console.log("error:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
+    // const profile : any = localStorage.getItem("profile") || {};
+    // const data = JSON.parse(profile);
+    // console.log("Fetched profile from localStorage:", data);
+    // setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,16 +126,16 @@ const Profile = () => {
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: formData.full_name,
+        first_name: formData.first_name,
         clinic_name: formData.clinic_name,
         shift: formData.shift,
-        phone: formData.phone || null,
+        phone_number: formData.phone_number || null,
         specialization: formData.specialization || null,
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
         qualification: formData.qualification || null,
         experience: formData.experience || null,
-        nmc_id: formData.nmc_id || null,
+        NMC_doctor_id: formData.NMC_doctor_id || null,
         working_days: formData.working_days.length > 0 ? formData.working_days : null,
       })
       .eq("id", user.id);
@@ -178,7 +204,7 @@ const Profile = () => {
                 <Avatar className="w-24 h-24">
                   <AvatarImage src={avatarUrl} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : "D"}
+                    {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : "D"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -195,11 +221,11 @@ const Profile = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Full Name</p>
-                      <p className="font-medium">{profile?.full_name}</p>
+                      <p className="font-medium">{profile?.first_name + " " + profile?.second_name}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{profile?.email}</p>
+                      <p className="font-medium">{profile?.email || "Not provided"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Age</p>
@@ -210,8 +236,8 @@ const Profile = () => {
                       <p className="font-medium">{profile?.gender || "Not provided"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">{profile?.phone || "Not provided"}</p>
+                      <p className="text-sm text-muted-foreground">Phone number</p>
+                      <p className="font-medium">{profile?.phone_number || "Not provided"}</p>
                     </div>
                   </div>
                 </div>
@@ -219,8 +245,8 @@ const Profile = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="full_name">Full Name *</Label>
-                      <Input id="full_name" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required />
+                      <Label htmlFor="first_name">Full Name *</Label>
+                      <Input id="first_name" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="age">Age</Label>
@@ -241,7 +267,7 @@ const Profile = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                      <Input id="phone" value={formData.phone_number} onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -274,7 +300,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">NMC ID</p>
-                      <p className="font-medium">{profile?.nmc_id || "Not provided"}</p>
+                      <p className="font-medium">{profile?.NMC_doctor_id || "Not provided"}</p>
                     </div>
                   </div>
                 </div>
@@ -295,7 +321,7 @@ const Profile = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="nmc_id">NMC ID</Label>
-                      <Input id="nmc_id" value={formData.nmc_id} onChange={(e) => setFormData({ ...formData, nmc_id: e.target.value })} placeholder="e.g., NMC12345" />
+                      <Input id="NMC_doctor_id" value={formData.NMC_doctor_id} onChange={(e) => setFormData({ ...formData, NMC_doctor_id: e.target.value })} placeholder="e.g., NMC12345" />
                     </div>
                   </div>
                 </div>

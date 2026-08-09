@@ -30,15 +30,16 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 interface Patient {
-  id: string;
-  full_name: string;
-  phone: string;
+  patient_id: string;
+  patient_name: string;
+  phone_number: string;
   age: number;
   gender: string;
-  blood_group: string | null;
-  created_at: string;
+  // blood_group: string | null;
+  createdAt: string;
 }
 
 const ManagePatients = () => {
@@ -46,7 +47,7 @@ const ManagePatients = () => {
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -57,50 +58,68 @@ const ManagePatients = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    if (user) fetchPatients();
-  }, [user]);
+  // useEffect(() => {
+  //   if (user) fetchPatients();
+  // }, [user]);
 
-  const fetchPatients = async () => {
-    setIsLoading(true);
+  // const fetchPatients = async () => {
+  //   setIsLoading(true);
 
-    const { data } = await supabase
-      .from("patients")
-      .select("*")
-      .eq("doctor_id", user?.id)
-      .order("created_at", { ascending: false });
+  //   const { data } = await supabase
+  //     .from("patients")
+  //     .select("*")
+  //     .eq("doctor_id", user?.id)
+  //     .order("createdAt", { ascending: false });
 
-    if (data) setPatients(data);
-    setIsLoading(false);
-  };
+  //   if (data) setPatients(data);
+  //   setIsLoading(false);
+  // };
 
-  const handleSearch = () => {
-    let filtered = patients;
+  const handleSearch = async () => {
+    // let filtered = patients;
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.full_name.toLowerCase().includes(term) ||
-          p.phone.includes(term) ||
-          p.id.toLowerCase().includes(term)
-      );
-    }
+    // if (searchTerm.trim()) {
+    //   const term = searchTerm.toLowerCase();
+    //   filtered = filtered.filter(
+    //     (p) =>
+    //       p.patient_name.toLowerCase().includes(term) ||
+    //       p.phone_number.includes(term) ||
+    //       p.patient_id.toLowerCase().includes(term)
+    //   );
+    // }
 
-    if (selectedDate) {
-      const start = new Date(selectedDate);
-      start.setHours(0, 0, 0, 0);
+    // if (selectedDate) {
+    //   const start = new Date(selectedDate);
+    //   start.setHours(0, 0, 0, 0);
 
-      const end = new Date(selectedDate);
-      end.setHours(23, 59, 59, 999);
+    //   const end = new Date(selectedDate);
+    //   end.setHours(23, 59, 59, 999);
 
-      filtered = filtered.filter((p) => {
-        const created = new Date(p.created_at);
-        return created >= start && created <= end;
+    //   filtered = filtered.filter((p) => {
+    //     const created = new Date(p.createdAt);
+    //     return created >= start && created <= end;
+    //   });
+    // }
+    
+    try {
+      setIsLoading(true);
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/doctors/search_patients`, {
+        patient_name: searchTerm,
+        phone_number: searchTerm
+      }, {
+        withCredentials: true,
       });
+      if (response.data.resSuccess === 1) {
+        console.log("Search response data:", response.data);
+        setIsLoading(false);
+        const filtered = response.data.data;
+        setFilteredPatients(filtered);
+      }
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
     }
 
-    setFilteredPatients(filtered);
+
     setCurrentPage(1);
     setHasSearched(true);
   };
@@ -143,7 +162,7 @@ const ManagePatients = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Name, Phone or ID"
+                      placeholder="Name, phone_number or ID"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -191,10 +210,10 @@ const ManagePatients = () => {
                     <TableRow>
                       <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>Phone</TableHead>
+                      <TableHead>phone_number</TableHead>
                       <TableHead>Age</TableHead>
                       <TableHead>Gender</TableHead>
-                      <TableHead>Blood Group</TableHead>
+                      {/* <TableHead>Blood Group</TableHead> */}
                       <TableHead>Date</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -214,14 +233,14 @@ const ManagePatients = () => {
                       </TableRow>
                     ) : (
                       paginatedData.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="font-mono text-xs">{p.id.slice(0, 8)}...</TableCell>
-                          <TableCell>{p.full_name}</TableCell>
-                          <TableCell>{p.phone}</TableCell>
+                        <TableRow key={p.patient_id}>
+                          <TableCell className="font-mono text-xs">{p.patient_id.slice(0, 8)}...</TableCell>
+                          <TableCell>{p.patient_name}</TableCell>
+                          <TableCell>{p.phone_number}</TableCell>
                           <TableCell>{p.age}</TableCell>
                           <TableCell>{p.gender}</TableCell>
-                          <TableCell>{p.blood_group || "N/A"}</TableCell>
-                          <TableCell>{format(new Date(p.created_at), "dd/MM/yyyy")}</TableCell>
+                          {/* <TableCell>{p.blood_group || "N/A"}</TableCell> */}
+                          <TableCell>{format(new Date(p.createdAt), "dd/MM/yyyy")}</TableCell>
                         </TableRow>
                       ))
                     )}

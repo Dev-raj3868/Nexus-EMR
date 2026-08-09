@@ -34,6 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 interface Appointment {
   id: string;
@@ -83,45 +84,30 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchAppointments();
-    }
-  }, [user, selectedDate]);
+    fetchAppointments();
+  }, [selectedDate]);
 
   const fetchAppointments = async () => {
-    setIsLoading(true);
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        id,
-        patient_id,
-        appointment_date,
-        status,
-        notes,
-        patients (
-          full_name,
-          phone,
-          age,
-          gender
-        )
-      `)
-      .eq("doctor_id", user?.id)
-      .gte("appointment_date", startOfDay.toISOString())
-      .lte("appointment_date", endOfDay.toISOString())
-      .order("appointment_date", { ascending: true });
-
-    if (!error && data) {
-      setAppointments(data);
+    try {
+      setIsLoading(true);
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/doctors/get_doctor_appointments`, {
+        appointment_date: format(selectedDate, "yyyy-MM-dd"),
+      }, {
+        withCredentials: true
+      })
+      console.log("profile response data:", response.data);
+      if(response.data.resSuccess === 1) {
+        const data = response.data.data;
+        setAppointments(data);
+      }
+    } catch (error: any) {
+      console.error("error:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

@@ -31,20 +31,25 @@ export function DashboardNavbar() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user) return;
+      // if (!user) return;
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, clinic_name, shift")
-        .eq("id", user.id)
-        .single();
-
-      if (data) setProfile(data);
+      // const { data } = await supabase
+      //   .from("profiles")
+      //   .select("full_name, clinic_name, shift")
+      //   .eq("id", user.id)
+      //   .single();
+      console.log("Fetching profile....");
+      const data = await JSON.parse(localStorage.getItem("profile"));
+      console.log("Profile from localStorage:", data);
+      if (data) {
+        setProfile(data[0]);
+        console.log("Setting data to profile state", profile);
+      }
     };
-
+      
     fetchProfile();
-  }, [user]);
-
+  }, []);
+  
   const handleLogout = async () => {
     await signOut(); // your hook already redirects
   };
@@ -64,8 +69,8 @@ export function DashboardNavbar() {
               {profile?.full_name || "Doctor"}
             </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {profile?.clinic_name || "Loading..."} • {profile?.shift || ""}
+          <span className={`text-xs text-muted-foreground ${profile?.clinic_name ? "" : "hidden"}`}>
+            {profile?.clinic_name} • {profile?.shift || ""}
           </span>
         </div>
       </div>

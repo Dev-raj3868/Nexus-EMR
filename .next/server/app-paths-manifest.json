@@ -1,4 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/medicine/page": "app/medicine/page.js"
+  "/profile/page": "app/profile/page.js",
+  "/prescriptions/page": "app/prescriptions/page.js",
+  "/manage-records/page": "app/manage-records/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/manage-patients/page": "app/manage-patients/page.js",
+  "/analytics/page": "app/analytics/page.js"
 }
